@@ -1,11 +1,11 @@
 #ifndef N
-#define N 1024
+#define N 512
 #endif /*N*/
 
 #ifndef M
-#define M 1024
+#define M 512
 #endif /*M*/
 
 #ifndef P
-#define P 1024
+#define P 512
 #endif /*P*/
