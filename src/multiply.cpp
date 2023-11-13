@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <thread>
 #include <immintrin.h>
+#include <pmmintrin.h>
 #include <algorithm>
 
 #define BLOCK_SIZE 32*32
@@ -12,6 +13,30 @@ typedef struct {
     double (*matrix2)[P];
     double (*result_matrix)[P];
 } ThreadData;
+
+void block_matrix_multiply_sse3(double (*matrix1)[M], double (*matrix2)[P], double (*result_matrix)[P], int row_start, int row_end, int col_start, int col_end,int mid_start,int mid_end) {
+    for (int i = row_start; i < row_end; i++) {
+        double *temp_rm = result_matrix[i];
+        for (int k = mid_start; k < mid_end; k++) {
+            double temp_m1 = matrix1[i][k];
+            double *temp_m2 = matrix2[k];
+
+            int j = col_start;
+            int no_need = (col_end - j) % 2;
+            for(int next = 0; next < no_need; next++, j++)
+                temp_rm[j] += temp_m1 * temp_m2[j];
+
+            for (; j < col_end; j += 2) {
+                __m128d m1 = _mm_set1_pd(temp_m1);
+                __m128d m2 = _mm_loadu_pd(temp_m2 + j);
+                __m128d rm = _mm_loadu_pd(temp_rm + j);
+                __m128d a = _mm_mul_pd(m1, m2);
+                __m128d b = _mm_add_pd(a, rm);
+                _mm_storeu_pd(temp_rm + j, b);
+            }
+        }
+    }
+}
 
 void block_matrix_multiply_avx512(double (*matrix1)[M], double (*matrix2)[P], double (*result_matrix)[P], int row_start, int row_end, int col_start, int col_end,int mid_start,int mid_end) {
     for (int i = row_start; i < row_end; i++) {
